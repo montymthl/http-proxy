@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"github.com/montymthl/http-proxy/utils"
 	"io"
 	"log"
 	"net"
@@ -93,9 +95,12 @@ func connectHandler(writer http.ResponseWriter, request *http.Request) {
 
 func main() {
 	//log.SetFlags(log.Lshortfile)
-	err := http.ListenAndServe("127.0.0.1:8080", http.HandlerFunc(proxyHandler))
+	var config = utils.GetConfig()
+	var addr = fmt.Sprintf("%s:%d", config.Proxy.Hostname, config.Proxy.Port)
+	err := http.ListenAndServe(addr, http.HandlerFunc(proxyHandler))
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	log.Println("server started on:" + addr)
 }

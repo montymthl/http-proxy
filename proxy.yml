@@ -1,0 +1,12 @@
+# This is the default　config file for http-proxy
+# You can edit as needed
+
+proxy:
+  # Proxy server name, 0.0.0.0 for all the ips on the server.
+  # Can be ipv4 address or ipv6 address or domain name.
+  host_name: '127.0.0.1'
+  # Proxy server port
+  port: 8080
+
+  # Disable request to local private ip address by default, 192.168.1.1 for example.
+  enable_private_network: false
