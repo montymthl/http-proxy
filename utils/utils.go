@@ -7,19 +7,23 @@ import (
 )
 
 type Config struct {
-	Proxy Proxy `yaml:"proxy"`
+	Server   Server   `yaml:"server"`
+	Upstream Upstream `yaml:"upstream"`
 }
 
-type Proxy struct {
+type Server struct {
+	Hostname string `yaml:"host_name"`
+	Port     int    `yaml:"port"`
+}
+
+type Upstream struct {
+	Enabled  bool   `yaml:"enabled"`
 	Hostname string `yaml:"host_name"`
 	Port     int    `yaml:"port"`
 }
 
 func GetConfig() Config {
-	var config = &Config{Proxy{
-		Hostname: "127.0.0.1",
-		Port:     8080,
-	}}
+	var config = getDefaultConfig()
 	if fp, err := os.Open("proxy.yml"); err == nil {
 		defer func(fp *os.File) {
 			err := fp.Close()
@@ -32,6 +36,26 @@ func GetConfig() Config {
 			log.Println(err)
 		}
 	}
-	log.Println(config)
 	return *config
+}
+
+func GetHttpClient() {
+	
+}
+
+func getDefaultConfig() *Config {
+	var defaultServer = Server{
+		Hostname: "127.0.0.1",
+		Port:     8080,
+	}
+	var defaultUpstream = Upstream{
+		Enabled:  false,
+		Hostname: "",
+		Port:     0,
+	}
+	var config = &Config{
+		Server:   defaultServer,
+		Upstream: defaultUpstream,
+	}
+	return config
 }
