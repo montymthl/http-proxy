@@ -15,7 +15,8 @@ server:
 # When use relay mode, the program will serve request to the upstream proxy server.
 upstream:
 
-  # Change this to true if you use upstram proxy server.
+  # Change this to true if you use upstream proxy server.
   enabled: false
+  #scheme: "http"
   #host_name: "upstream_proxy_server"
-  #port: "upstream_proxy_server"
+  #port: 8081

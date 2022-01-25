@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"github.com/montymthl/http-proxy/utils"
 	"io"
@@ -10,12 +11,16 @@ import (
 	"net/http"
 )
 
+var configFile = "proxy.yml"
+var config utils.Config
+
 func proxyHandler(writer http.ResponseWriter, request *http.Request) {
+	//log.Println(request)
 	if request.Method == http.MethodConnect {
 		connectHandler(writer, request)
 		return
 	}
-	client := http.DefaultClient
+	client := utils.GetHttpClient(config)
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
@@ -95,12 +100,14 @@ func connectHandler(writer http.ResponseWriter, request *http.Request) {
 
 func main() {
 	//log.SetFlags(log.Lshortfile)
-	var config = utils.GetConfig()
-	var addr = fmt.Sprintf("%s:%d", config.Proxy.Hostname, config.Proxy.Port)
+	flag.StringVar(&configFile, "c", "proxy.yml", "Specify the main config file")
+	flag.Parse()
+	config = utils.GetConfig(configFile)
+	var addr = fmt.Sprintf("%s:%d", config.Server.Hostname, config.Server.Port)
+	log.Println("server started on:" + addr)
 	err := http.ListenAndServe(addr, http.HandlerFunc(proxyHandler))
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	log.Println("server started on:" + addr)
 }

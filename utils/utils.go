@@ -1,8 +1,11 @@
 package utils
 
 import (
+	"fmt"
 	"gopkg.in/yaml.v2"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 )
 
@@ -18,13 +21,14 @@ type Server struct {
 
 type Upstream struct {
 	Enabled  bool   `yaml:"enabled"`
+	Scheme   string `yaml:"scheme"`
 	Hostname string `yaml:"host_name"`
 	Port     int    `yaml:"port"`
 }
 
-func GetConfig() Config {
+func GetConfig(configFile string) Config {
 	var config = getDefaultConfig()
-	if fp, err := os.Open("proxy.yml"); err == nil {
+	if fp, err := os.Open(configFile); err == nil {
 		defer func(fp *os.File) {
 			err := fp.Close()
 			if err != nil {
@@ -35,12 +39,25 @@ func GetConfig() Config {
 		if err != nil {
 			log.Println(err)
 		}
+	} else {
+		log.Println(err)
 	}
 	return *config
 }
 
-func GetHttpClient() {
-	
+func GetHttpClient(config Config) *http.Client {
+	var client = http.DefaultClient
+	if config.Upstream.Enabled {
+		var uConfig = config.Upstream
+		var upstream = fmt.Sprintf("%s://%s:%d", uConfig.Scheme, uConfig.Hostname, uConfig.Port)
+		parsed, err := url.Parse(upstream)
+		if err != nil {
+			log.Println(err)
+			return nil
+		}
+		client.Transport = &http.Transport{Proxy: http.ProxyURL(parsed)}
+	}
+	return client
 }
 
 func getDefaultConfig() *Config {
@@ -50,8 +67,9 @@ func getDefaultConfig() *Config {
 	}
 	var defaultUpstream = Upstream{
 		Enabled:  false,
-		Hostname: "",
-		Port:     0,
+		Scheme:   "http",
+		Hostname: "127.0.0.1",
+		Port:     8081,
 	}
 	var config = &Config{
 		Server:   defaultServer,
