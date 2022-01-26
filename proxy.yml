@@ -20,3 +20,12 @@ upstream:
   #scheme: "http"
   #host_name: "upstream_proxy_server"
   #port: 8081
+
+# The server's log config.
+log:
+  # Change this to true if you want to see log output or save it to file
+  enabled: false
+  # Log level, can be any of trace, debug, info, warn, error, fatal, panic, disabled
+  #level: "info"
+  # Some place to save log. output to console stderr by default.
+  #output: "proxy.log"

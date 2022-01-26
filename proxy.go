@@ -5,8 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/montymthl/http-proxy/utils"
+	"github.com/rs/zerolog/log"
 	"io"
-	"log"
 	"net"
 	"net/http"
 )
@@ -15,7 +15,7 @@ var configFile = "proxy.yml"
 var config utils.Config
 
 func proxyHandler(writer http.ResponseWriter, request *http.Request) {
-	//log.Println(request)
+	log.Print(request)
 	if request.Method == http.MethodConnect {
 		connectHandler(writer, request)
 		return
@@ -30,7 +30,7 @@ func proxyHandler(writer http.ResponseWriter, request *http.Request) {
 	newHeader.Del("Proxy-Connection")
 	response, err := client.Do(newReq)
 	if err != nil {
-		log.Println(err)
+		log.Print(err)
 		return
 	}
 	writerHeader := writer.Header()
@@ -50,13 +50,13 @@ func connectHandler(writer http.ResponseWriter, request *http.Request) {
 	rAddr, _ := net.ResolveTCPAddr("tcp4", request.RequestURI)
 	rConn, err := net.DialTCP("tcp4", nil, rAddr)
 	if err != nil {
-		log.Println(err)
+		log.Print(err)
 		return
 	}
 	defer func(conn *net.TCPConn) {
 		err := conn.Close()
 		if err != nil {
-			log.Println(err)
+			log.Print(err)
 		}
 	}(rConn)
 
@@ -66,7 +66,7 @@ func connectHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 	lConn, _, err := hj.Hijack()
 	if err != nil {
-		log.Println(err)
+		log.Print(err)
 		return
 	}
 	defer func() {
@@ -99,15 +99,19 @@ func connectHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func main() {
-	//log.SetFlags(log.Lshortfile)
 	flag.StringVar(&configFile, "c", "proxy.yml", "Specify the main config file")
+	var verbose bool
+	flag.BoolVar(&verbose, "v", false, "Log/Show verbose messages")
 	flag.Parse()
+
 	config = utils.GetConfig(configFile)
+	utils.SetupLog(verbose, config)
+
 	var addr = fmt.Sprintf("%s:%d", config.Server.Hostname, config.Server.Port)
-	log.Println("server started on:" + addr)
+	log.Info().Msg("Server started on:" + addr)
 	err := http.ListenAndServe(addr, http.HandlerFunc(proxyHandler))
 	if err != nil {
-		log.Println(err)
+		log.Fatal().Err(err).Msg("")
 		return
 	}
 }
