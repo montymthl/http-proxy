@@ -108,7 +108,7 @@ func main() {
 	utils.SetupLog(verbose, config)
 
 	var addr = fmt.Sprintf("%s:%d", config.Server.Hostname, config.Server.Port)
-	log.Info().Msg("Server started on:" + addr)
+	log.Info().Msg("Http proxy server started on:" + addr)
 	err := http.ListenAndServe(addr, http.HandlerFunc(proxyHandler))
 	if err != nil {
 		log.Fatal().Err(err).Msg("")
