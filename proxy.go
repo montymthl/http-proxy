@@ -47,13 +47,12 @@ func proxyHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func connectHandler(writer http.ResponseWriter, request *http.Request) {
-	rAddr, _ := net.ResolveTCPAddr("tcp4", request.RequestURI)
-	rConn, err := net.DialTCP("tcp4", nil, rAddr)
+	rConn, err := utils.GetRemoteConnection(request.RequestURI, config)
 	if err != nil {
 		log.Print(err)
 		return
 	}
-	defer func(conn *net.TCPConn) {
+	defer func(conn net.Conn) {
 		err := conn.Close()
 		if err != nil {
 			log.Print(err)
@@ -76,9 +75,11 @@ func connectHandler(writer http.ResponseWriter, request *http.Request) {
 		}
 	}()
 
-	_, err = lConn.Write([]byte("HTTP/1.1 200 Connection established\r\n\r\n"))
-	if err != nil {
-		return
+	if !config.Upstream.Enabled {
+		_, err = lConn.Write([]byte("HTTP/1.1 200 Connection established\r\n\r\n"))
+		if err != nil {
+			return
+		}
 	}
 
 	done := make(chan struct{})

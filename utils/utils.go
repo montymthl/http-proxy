@@ -2,10 +2,12 @@
 package utils
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -112,4 +114,33 @@ func SetupLog(verbose bool, config Config) {
 		}
 	}
 	log.Logger = Logger
+}
+
+// GetRemoteConnection return the upstream connect or the target addr connect
+func GetRemoteConnection(uri string, config Config) (net.Conn, error) {
+	if config.Upstream.Enabled {
+		upstreamUri := fmt.Sprintf("%s:%d", config.Upstream.Hostname, config.Upstream.Port)
+		rAddr, _ := net.ResolveTCPAddr("tcp4", upstreamUri)
+		var rConn net.Conn
+		var err error
+		if config.Upstream.Scheme == "http" {
+			rConn, err = net.DialTCP("tcp4", nil, rAddr)
+		} else {
+			rConn, err = tls.Dial("tcp4", upstreamUri, nil)
+		}
+		if err != nil {
+			log.Print(err)
+			return nil, err
+		}
+		var connectHeader = fmt.Sprintf("CONNECT %s HTTP/1.1\r\n", uri)
+		connectHeader = fmt.Sprintf("%sHost: %s\r\n", connectHeader, uri)
+		connectHeader = fmt.Sprintf("%sProxy-Connection: Keep-Alive\r\n\r\n", connectHeader)
+		_, err = rConn.Write([]byte(connectHeader))
+		if err != nil {
+			return nil, err
+		}
+		return rConn, nil
+	}
+	rAddr, _ := net.ResolveTCPAddr("tcp4", uri)
+	return net.DialTCP("tcp4", nil, rAddr)
 }
